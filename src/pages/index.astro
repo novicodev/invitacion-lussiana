@@ -1,0 +1,194 @@
+---
+const date = new Date('2026-09-19T19:00:00-05:00');
+const mapEmbed = 'https://www.google.com/maps?q=Cra.+57+%2329-38,+Guayacanes+Del+Norte,+Bello,+Antioquia&output=embed';
+const mapUrl = 'https://maps.app.goo.gl/Vhc1twY7K9TpNc7QA';
+const message = encodeURIComponent('Hola, soy [Tu nombre]. Confirmo mi asistencia a los XV años de Lussiana.');
+const phoneNumbers = ['573042467648'];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="theme-color" content="#f9e8ee" />
+    <title>Mis XV · Lussiana</title>
+  </head>
+  <body>
+    <main>
+      <section class="cover">
+        <div class="cover-art" aria-hidden="true"></div>
+        <div class="cover-copy">
+          <p class="eyebrow">Una noche para recordar</p>
+          <p class="small-title">Mis</p>
+          <h1>XV</h1>
+          <p class="name">Lussiana</p>
+          <p class="date">19 · 09 · 2026</p>
+          <p class="cover-dedication" data-guest-dedication hidden></p>
+          <a class="scroll-arrow" href="#historia" aria-label="Continuar a la invitación">↓</a>
+        </div>
+      </section>
+
+      <section class="story section" id="historia">
+        <p class="eyebrow">Una nueva etapa</p>
+
+        <div class="invite">
+          <p class="invite-family">La familia Ardila Loaiza</p>
+          <p class="invite-names">Jorge y Leidy</p>
+          <p class="invite-cta">te invitan a celebrar los XV años de</p>
+          <p class="invite-hero">Lussiana</p>
+        </div>
+
+        <h2 class="story-heading">Hay momentos<br />que se quedan<br /><em>para siempre.</em></h2>
+
+        <div class="copy invite-copy">
+          <p class="letter-salutation" data-guest-salutation hidden></p>
+          <p>15 años, un sueño que comienza y una noche que quedará para siempre en el corazón. Queremos compartir contigo la magia de este momento tan especial.</p>
+          <p>Con mucha ilusión, quiero compartir contigo una noche que guardaré para siempre.</p>
+          <p class="signature">Con cariño,<br /><strong>Lussiana</strong></p>
+        </div>
+      </section>
+
+      <section class="event section">
+        <p class="eyebrow">Guarda la fecha</p>
+        <div class="event-card">
+          <div><span class="label">Sábado</span><strong class="date-display"><b>19</b><span>septiembre<br /><small>2026</small></span></strong></div>
+          <div><span class="label">Recepción</span><strong>7:00<br /><small>p. m.</small></strong></div>
+        </div>
+        <div class="countdown" data-countdown data-target={date.toISOString()}><div><b data-days>00</b><span>días</span></div><div><b data-hours>00</b><span>horas</span></div><div><b data-minutes>00</b><span>minutos</span></div><div><b data-seconds>00</b><span>segundos</span></div></div>
+        <p class="punctual">Te esperamos con puntualidad para disfrutar desde el inicio de la fiesta y compartir más tiempo juntos.</p>
+      </section>
+
+      <section class="venue section">
+        <div class="venue-photo"><iframe title="Ubicación de la recepción" src={mapEmbed} style="border:0" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+        <div class="venue-copy">
+          <p class="eyebrow">El lugar</p>
+          <h2>Barrio Cabañas<br /><em>Recepción</em></h2>
+          <address>CRA 57 # 29 - 38<br />Bello, Antioquia</address>
+          <a class="button" href={mapUrl} target="_blank" rel="noreferrer">Cómo llegar <span>↗</span></a>
+        </div>
+      </section>
+
+      <section class="details section">
+        <p class="eyebrow">Detalles de la noche</p>
+        <h2 class="details-title">Todo pensado para<br /><em>celebrar juntos.</em></h2>
+        <div class="detail-grid">
+          <article><span class="detail-symbol">✦</span><h3>Código de<br /><em>vestimenta</em></h3><p><strong>No aplica</strong><br />Ven como te sientas cómodo y listo para celebrar.</p></article>
+          <article><span class="detail-symbol">♡</span><h3>Mesa de<br /><em>regalos</em></h3><p><strong>Lluvia de sobres</strong></p></article>
+        </div>
+      </section>
+
+      <section class="rsvp section">
+        <p class="eyebrow">Confirma tu asistencia</p>
+        <h2>¿Nos<br /><em>acompañas?</em></h2>
+        <p>Por favor confirmar antes del <strong>12 de septiembre</strong>.</p>
+        <p class="cupos-note" data-cupos-note hidden></p>
+        <div class="actions">{phoneNumbers.map((phone) => <a class="button button-light rsvp-link" data-phone={phone} href={`https://wa.me/${phone}?text=${message}`} target="_blank" rel="noreferrer">Confirmar por WhatsApp ↗</a>)}</div>
+      </section>
+
+      <section class="photos section">
+        <p class="eyebrow">La historia continúa</p>
+        <div class="photos-grid"><div><h2>Comparte<br /><em>tus fotos.</em></h2><p>Guarda entre 3 y 6 fotos favoritas de la noche. Próximamente compartiremos la carpeta para reunir todos nuestros recuerdos.</p><button class="button is-disabled" type="button" disabled>Carpeta próximamente</button></div><div class="photo-frame" aria-hidden="true"><span>♡</span><small>Momentos para recordar</small></div></div>
+      </section>
+
+      <footer><p class="hashtag">#Mis15Lussiana · #LUSSIANAXV</p><p>♪ Angel · Robbie Williams</p><p class="footer-name">Lussiana · XV</p></footer>
+    </main>
+
+    <div class="review-overlay" aria-hidden="true"><span>En revisión</span></div>
+
+    <script is:inline>
+      const countdown = document.querySelector('[data-countdown]');
+      const tick = () => { const diff = Math.max(0, new Date(countdown.dataset.target).getTime() - Date.now()); const values = [Math.floor(diff / 86400000), Math.floor(diff / 3600000) % 24, Math.floor(diff / 60000) % 60, Math.floor(diff / 1000) % 60]; ['days','hours','minutes','seconds'].forEach((key, i) => document.querySelector(`[data-${key}]`).textContent = String(values[i]).padStart(2, '0')); };
+      tick(); setInterval(tick, 1000);
+    </script>
+    <script>
+      const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+      const token = new URLSearchParams(window.location.search).get('invitacion');
+
+      // "FLIA JARAMILLO RODRIGUEZ" → "Flia Jaramillo Rodriguez"
+      // (partículas españolas quedan en minúscula: "María del Carmen Pérez")
+      const TITLE_PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e', 'o', 'u', 'a', 'al']);
+      const toTitleCase = (value: string): string =>
+        value
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .map((word, index) =>
+            index > 0 && TITLE_PARTICLES.has(word)
+              ? word
+              : word.charAt(0).toUpperCase() + word.slice(1),
+          )
+          .join(' ');
+
+      // "FLIA BIVANQUE RODRIGUEZ" → "Bivanque Rodriguez" (quita prefijo/sufijo familia)
+      const cleanFamilyName = (rawName: string): string =>
+        rawName
+          .replace(/^(FLIA|FAMILIA)\s+/i, '')
+          .replace(/\s+(Y\s+)?(FLIA|FAMILIA)\s*$/i, '')
+          .trim();
+
+      // a → Querida · d → Querido · fam → Querida familia X · grupo → Queridos
+      // sin tratamiento: si el nombre parece familia (FLIA/FAMILIA) → familia, si no → Querida
+      const buildSalutation = (
+        displayName: string,
+        rawName: string,
+        treatment: string | null,
+      ): string => {
+        const looksLikeFamily = /^(FLIA|FAMILIA)\b|\bY\s+(FLIA|FAMILIA)\b/i.test(rawName);
+        if (treatment === 'fam' || (!treatment && looksLikeFamily)) {
+          return `Querida familia ${toTitleCase(cleanFamilyName(rawName))}:`;
+        }
+        if (treatment === 'd') return `Querido ${displayName}:`;
+        if (treatment === 'grupo') return `Queridos ${displayName}:`;
+        return `Querida ${displayName}:`;
+      };
+
+      const applyGuestPersonalization = async () => {
+        if (!token || !supabaseUrl || !supabaseAnonKey) return;
+        const dedication = document.querySelector<HTMLElement>('[data-guest-dedication]');
+        const salutation = document.querySelector<HTMLElement>('[data-guest-salutation]');
+        const cuposNote = document.querySelector<HTMLElement>('[data-cupos-note]');
+        const rsvpLinks = Array.from(document.querySelectorAll<HTMLAnchorElement>('.rsvp-link'));
+        if (!dedication || !salutation || rsvpLinks.length === 0) return;
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+          const { data, error } = await supabase.rpc('get_guest_rsvp', { p_token: token });
+          if (error || !Array.isArray(data) || data.length !== 1) return;
+          const row = data[0];
+          if (!row || row.slug !== 'lussiana-xv' || !row.guest_name) return;
+          const rawName = String(row.guest_name);
+          const displayName = toTitleCase(rawName);
+          const treatment = typeof row.treatment === 'string' ? row.treatment : null;
+          dedication.textContent = `para ${displayName}`;
+          dedication.hidden = false;
+          salutation.textContent = buildSalutation(displayName, rawName, treatment);
+          salutation.hidden = false;
+          // Cupos reservados (sección RSVP) — tuteo para individuales, ustedes para grupos
+          if (cuposNote && typeof row.cupos === 'number' && row.cupos > 0) {
+            const isGroup = treatment === 'fam' || treatment === 'grupo';
+            const noun = row.cupos === 1 ? 'cupo' : 'cupos';
+            cuposNote.textContent = isGroup
+              ? `Reservamos ${row.cupos} ${noun} para ustedes`
+              : `Reservamos ${row.cupos} ${noun} para ti`;
+            cuposNote.hidden = false;
+          }
+          const encodedName = encodeURIComponent(displayName);
+          rsvpLinks.forEach((link) => {
+            link.href = link.href.replace('%5BTu%20nombre%5D', encodedName);
+          });
+        } catch {
+          return;
+        }
+      };
+
+      applyGuestPersonalization();
+    </script>
+  </body>
+</html>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Parisienne&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+:root{--ink:#4a2436;--rose:#c2708a;--blush:#f9e8ee;--cream:#fdf9f6;--gold:#d9a85c;--serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font:17px/1.65 var(--sans)}main{overflow:hidden}.cover{min-height:100svh;position:relative;display:grid;place-items:end center;padding-bottom:7vh;text-align:center;color:#fff8f3;background:#7a2e4a}.cover-art,.venue-photo{position:absolute;inset:0;background:linear-gradient(135deg,#7a2e4a 0%,#c2708a 60%)}.cover-art{filter:saturate(.65);opacity:.55}.cover:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,#3a142444,#3a1424c7)}.cover-copy{position:relative;z-index:1;width:min(92%,650px)}.eyebrow,.label{letter-spacing:.18em;text-transform:uppercase;font-size:.7rem}.cover .eyebrow{color:#fbe3ea}.small-title{font:italic 1.6rem var(--serif);margin:4rem 0 0}.cover h1{font:clamp(10rem,35vw,19rem)/.8 var(--serif);font-weight:400;letter-spacing:-.08em;margin:.4rem 0;background:linear-gradient(110deg,#fdf6ff 12%,#e6bd83 35%,#fffdf8 48%,#d9a85c 62%,#fbe3ea 80%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:xv-shine 4.5s ease-in-out infinite}@keyframes xv-shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}.name{font:italic clamp(4.5rem,16vw,10rem)/.85 'Parisienne',cursive;letter-spacing:.01em;text-transform:none;margin:3.5rem 0 1.15rem;color:#fffdf8;text-shadow:0 2px 18px #35152299}.date{margin-top:1.6rem;letter-spacing:.2em;color:#f7d9e2}.scroll-arrow{display:inline-block;margin-top:5rem;color:#e6bd83;text-decoration:none;font:2rem/1 var(--serif);animation:float-arrow 2s ease-in-out infinite}.scroll-arrow:focus-visible{outline:1px solid #fff;padding:.3rem}@keyframes float-arrow{50%{transform:translateY(7px)}}.section{padding:clamp(5rem,12vw,10rem) clamp(1.5rem,8vw,9rem)}.eyebrow{color:var(--rose);margin:0 0 3.5rem}.story{background:#fffdfb}.invite{margin:0 auto;max-width:36rem;display:flex;flex-direction:column;align-items:center;gap:1.05rem;text-align:center}.invite-family{margin:0;font:600 .85rem var(--sans);letter-spacing:.24em;text-transform:uppercase;color:var(--rose)}.invite-names{margin:0;font:italic 1.7rem/1.45 var(--serif);color:var(--ink)}.invite-cta{margin:0;font:italic 1.15rem var(--serif);color:#8a5b6b}.invite-hero{margin:0;font:italic clamp(2.6rem,8vw,4.5rem)/1 'Parisienne',cursive;color:var(--rose)}.story-heading{margin:clamp(5rem,10vw,8rem) auto 3rem;max-width:30rem;text-align:center;font:400 clamp(3rem,7vw,5.5rem)/1.05 var(--serif);letter-spacing:-.05em}.story-heading em{color:var(--rose)}.copy{max-width:34rem;margin:0 auto;color:#6b4a58;font-size:1.05rem}.copy p+p{margin-top:1.2rem}.signature{margin-top:2.5rem;font:italic 1.3rem var(--serif);color:var(--ink)}.event{background:var(--blush)}.event-card{display:flex;gap:clamp(2rem,6vw,5rem);justify-content:center;flex-wrap:wrap;margin-bottom:4rem}.event-card>div{display:flex;flex-direction:column;align-items:center;gap:.4rem}.event-card .label{color:var(--rose)}.event-card strong{font:400 clamp(1.8rem,4vw,2.6rem)/1 var(--serif);color:var(--ink);text-align:center}.date-display{display:flex!important;align-items:center;gap:1rem}.date-display b{font:400 clamp(4rem,9vw,7rem)/.8 var(--serif);color:var(--rose)}.date-display span{font:italic 1.3rem/1.1 var(--serif);color:var(--ink)}.date-display small{font:normal .8rem var(--sans);letter-spacing:.15em;text-transform:uppercase}.countdown{display:flex;gap:clamp(1rem,4vw,3rem);justify-content:center}.countdown>div{display:flex;flex-direction:column;align-items:center}.countdown b{font:400 clamp(2rem,5vw,3.2rem)/1 var(--serif);color:var(--rose)}.countdown span{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:#8a5b6b}.punctual{max-width:34rem;margin:3rem auto 0;text-align:center;color:#8a5b6b;font-style:italic}.venue{position:relative;background:var(--cream);color:var(--ink)}.venue-photo{position:absolute;inset:0;width:50%;height:100%;background:#f3d9e2}.venue-photo iframe{width:100%;height:100%}.venue-copy{position:relative;margin-left:50%;padding-left:clamp(2rem,6vw,5rem);max-width:42rem}.venue-copy h2{font:400 clamp(2.6rem,6vw,4.5rem)/1.05 var(--serif);letter-spacing:-.04em;margin:0 0 1.2rem}.venue-copy h2 em{color:var(--rose)}.venue-copy p{color:#8a5b6b}.venue-copy address{font-style:normal;font-size:1.05rem;margin:1.2rem 0 2rem;color:var(--ink)}.button{display:inline-flex;align-items:center;gap:.5rem;padding:1rem 1.6rem;border-radius:999px;background:var(--rose);border:1px solid var(--rose);color:#fff8f3;text-decoration:none;font:500 .85rem var(--sans);letter-spacing:.08em;transition:background .2s}.button:hover{background:var(--ink)}.button span{font:1rem var(--serif)}.button.is-disabled{opacity:.6;cursor:not-allowed}.details{background:var(--blush)}.details-title{font:400 clamp(3.4rem,8vw,7.5rem)/.95 var(--serif);letter-spacing:-.07em;margin:0 0 4rem}.details-title em{color:var(--rose)}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;background:transparent;max-width:950px}.detail-grid article{position:relative;min-height:310px;background:#fdf9f6;border:1px solid #ecd3dd;padding:2.5rem;box-shadow:10px 10px 0 #f3d9e2}.detail-symbol{color:var(--gold);font:2rem var(--serif)}.detail-grid h3{margin:2.5rem 0 1.3rem;color:var(--ink)}.detail-grid h3 em{color:var(--rose)}.detail-grid p{color:#6b4a58;max-width:18rem}.detail-grid p strong{color:var(--ink);font:italic 1.1rem var(--serif)}.rsvp{background:#fffdfb;text-align:center}.rsvp h2{font:400 clamp(3.4rem,8vw,7.5rem)/.95 var(--serif);letter-spacing:-.07em;margin:0 0 2rem}.rsvp h2 em{color:var(--rose)}.rsvp>p{color:#6b4a58;max-width:30rem;margin:0 auto 2.5rem}.rsvp>p strong{color:var(--rose)}.actions{display:flex;justify-content:center;gap:1rem}.button-light{background:#fff;color:var(--rose);border-color:var(--rose)}.button-light:hover{background:var(--rose);color:#fff}.photos{background:#fdf9f6}.photos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8vw;align-items:center}.photos-grid p{max-width:25rem;color:#8a5b6b}.photos h2{font:400 clamp(3.4rem,8vw,7.5rem)/.95 var(--serif);letter-spacing:-.07em;margin:0}.photos h2 em{color:var(--rose)}.photo-frame{aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:1rem;border:1px solid var(--gold);background:var(--blush);color:var(--rose);transform:rotate(3deg)}.photo-frame span{font:5rem var(--serif)}.photo-frame small{letter-spacing:.14em;text-transform:uppercase;font-size:.65rem}footer{padding:4.5rem clamp(1.5rem,8vw,9rem);text-align:center;background:var(--ink);color:#f7d9e2}.hashtag{font:600 .85rem var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 1.2rem}footer p+p{margin-top:.5rem;font-size:.9rem}.footer-name{font:italic 1.4rem var(--serif);color:#fffdf8;margin-top:1.6rem!important}.cover-dedication{font:italic clamp(1.6rem,4vw,2.3rem)/1.3 'Parisienne',cursive;color:#fbe3ea;margin:1.6rem 0 0;text-shadow:0 1px 14px rgba(53,21,34,.5)}.letter-salutation{font:italic 1.25rem/1.5 var(--serif);color:var(--rose);margin:0 0 1.2rem}.cupos-note{font:italic .95rem/1.5 var(--sans);color:#765d64;margin:.4rem 0 1.8rem}.cupos-note strong,.cupos-note b{color:var(--rose)}.review-overlay{position:fixed;inset:0;z-index:40;display:grid;place-items:center;pointer-events:none;background:rgba(250,249,246,.35)}.review-overlay span{font:italic clamp(2.4rem,8vw,5rem)/1 'Parisienne',cursive;color:rgba(74,36,54,.22);letter-spacing:.06em;transform:rotate(-8deg);white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.5)}@media(max-width:700px){.review-overlay{background:rgba(250,249,246,.28)}}@media(max-width:900px){.venue-photo{position:relative;inset:auto;width:100%;height:320px;margin-bottom:2rem}.venue-copy{margin-left:0;padding-left:0}}@media(max-width:700px){.detail-grid{grid-template-columns:1fr}.photos-grid{grid-template-columns:1fr}.photo-frame{max-width:340px;margin:0 auto}}
+</style>

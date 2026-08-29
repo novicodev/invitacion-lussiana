@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#f9e8ee" />
+    <title>Administración · XV de Lussiana</title>
+  </head>
+  <body>
+    <main class="admin">
+      <header class="admin-header">
+        <p class="eyebrow">Invitaciones</p>
+        <h1>Administración</h1>
+        <p class="subtitle">XV de Lussiana · 19.09.2026</p>
+      </header>
+
+      <section class="panel secret-panel">
+        <h2>Clave de administrador</h2>
+        <div class="row">
+          <input id="secret" type="password" placeholder="Ingresa el admin secret" autocomplete="off" />
+          <button class="btn btn-rose" type="button" data-secret-save>Entrar</button>
+        </div>
+        <p class="hint">La clave se guarda solo en este navegador (sessionStorage) y se envía solo a la función de invitados. Nunca se sube al sitio.</p>
+        <p class="error" data-secret-error hidden></p>
+      </section>
+
+      <section class="panel" data-mint-panel hidden>
+        <h2>Crear invitados</h2>
+        <p class="hint">Una línea por invitado: <code>nombre; cupos; tratamiento</code> — tratamiento opcional: <code>a</code> (Querida), <code>d</code> (Querido), <code>fam</code> (Querida familia), <code>grupo</code> (Queridos). También acepta <code>|</code> o <code>, N</code>.</p>
+        <textarea data-mint-input rows="6" placeholder="María Rodriguez; 2&#10;Pedro Pérez&#10;Ana Gómez; 3"></textarea>
+        <div class="row">
+          <button class="btn btn-rose" type="button" data-mint>Crear invitados</button>
+          <button class="btn btn-ghost" type="button" data-copy-all>Copiar todos</button>
+        </div>
+        <p class="error" data-mint-error hidden></p>
+      </section>
+
+      <section class="panel" data-list-panel hidden>
+        <h2>Invitados <span class="count" data-count>0</span></h2>
+        <div class="list-tools">
+          <input type="search" data-search placeholder="Buscar invitado…" autocomplete="off" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Nombre</th><th>Cupos</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
+            <tbody data-guest-list></tbody>
+          </table>
+        </div>
+        <div class="pager" data-pager hidden>
+          <button class="btn btn-sm btn-ghost" type="button" data-prev>← Anterior</button>
+          <span class="page-info" data-page-info></span>
+          <button class="btn btn-sm btn-ghost" type="button" data-next>Siguiente →</button>
+        </div>
+        <p class="empty" data-empty hidden>Aún no hay invitados. Crea los primeros arriba.</p>
+        <p class="error" data-list-error hidden></p>
+      </section>
+    </main>
+
+    <div class="toast" data-toast hidden></div>
+
+    <script>
+      const ADMIN_SLUG = 'lussiana-xv';
+      const API_URL = import.meta.env.PUBLIC_GUEST_ADMIN_URL;
+      const SECRET_KEY = 'lussiana_admin_secret';
+      const STATUS_LABEL = { confirmed: 'Confirmado', declined: 'No asistirá', pending: 'Pendiente' };
+      const STATUS_CLASS = { confirmed: 'badge-confirmed', declined: 'badge-declined', pending: 'badge-pending' };
+      const STATUS_ACTIONS = [
+        { value: 'confirmed', label: 'Confirmar', cls: 'btn-confirm' },
+        { value: 'declined', label: 'No asistirá', cls: 'btn-decline' },
+        { value: 'pending', label: 'Pendiente', cls: 'btn-pending' },
+      ];
+      const TREATMENT_LABEL: Record<string, string> = {
+        a: 'Querida',
+        d: 'Querido',
+        fam: 'Querida familia',
+        grupo: 'Queridos',
+      };
+
+      type Guest = { id: string; name: string; cupos: number; status: string; token: string; treatment?: string | null };
+
+      const $ = <T extends HTMLElement>(sel: string): T | null => document.querySelector<T>(sel);
+
+      const secretInput = $<HTMLInputElement>('#secret');
+      const secretSaveBtn = $<HTMLButtonElement>('[data-secret-save]');
+      const secretError = $<HTMLElement>('[data-secret-error]');
+      const mintPanel = $<HTMLElement>('[data-mint-panel]');
+      const listPanel = $<HTMLElement>('[data-list-panel]');
+      const mintInput = $<HTMLTextAreaElement>('[data-mint-input]');
+      const mintBtn = $<HTMLButtonElement>('[data-mint]');
+      const mintError = $<HTMLElement>('[data-mint-error]');
+      const copyAllBtn = $<HTMLButtonElement>('[data-copy-all]');
+      const guestList = $<HTMLElement>('[data-guest-list]');
+      const listError = $<HTMLElement>('[data-list-error]');
+      const emptyEl = $<HTMLElement>('[data-empty]');
+      const countEl = $<HTMLElement>('[data-count]');
+      const toast = $<HTMLElement>('[data-toast]');
+      const searchInput = $<HTMLInputElement>('[data-search]');
+      const pagerEl = $<HTMLElement>('[data-pager]');
+      const pageInfoEl = $<HTMLElement>('[data-page-info]');
+      const prevBtn = $<HTMLButtonElement>('[data-prev]');
+      const nextBtn = $<HTMLButtonElement>('[data-next]');
+
+      const PAGE_SIZE = 20;
+      let searchQuery = '';
+      let page = 1;
+
+      let secret = sessionStorage.getItem(SECRET_KEY) ?? '';
+      let guests: Guest[] = [];
+
+      const showError = (el: HTMLElement | null, message: string): void => {
+        if (!el) return;
+        if (message) { el.textContent = message; el.hidden = false; } else { el.hidden = true; }
+      };
+
+      const showToast = (message: string): void => {
+        if (!toast) return;
+        toast.textContent = message;
+        toast.hidden = false;
+        window.setTimeout(() => { toast.hidden = true; }, 2000);
+      };
+
+      const toGuests = (data: unknown): Guest[] => {
+        if (Array.isArray(data)) return data as Guest[];
+        const obj = data as { guests?: Guest[]; data?: Guest[] };
+        if (obj && Array.isArray(obj.guests)) return obj.guests;
+        if (obj && Array.isArray(obj.data)) return obj.data;
+        return [];
+      };
+
+      const linkFor = (token: string): string =>
+        `${window.location.origin}/?invitacion=${encodeURIComponent(token)}`;
+
+      const api = async (action: string, payload: Record<string, unknown> = {}): Promise<unknown> => {
+        if (!API_URL) throw new Error('Falta la configuración PUBLIC_GUEST_ADMIN_URL en el entorno.');
+        if (!secret) throw new Error('Ingresa la clave de administrador.');
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-secret': secret },
+          body: JSON.stringify({ action, slug: ADMIN_SLUG, ...payload }),
+        });
+        const body = await res.json().catch(() => null);
+        if (!res.ok) {
+          const errMsg =
+            body && typeof body === 'object' && 'error' in body
+              ? String((body as { error: unknown }).error)
+              : `El servidor respondió ${res.status}. Revisa la clave e inténtalo de nuevo.`;
+          throw new Error(errMsg);
+        }
+        return body;
+      };
+
+      const loadGuests = async (): Promise<void> => {
+        showError(listError, '');
+        if (!guestList) return;
+        try {
+          const data = await api('list');
+          guests = toGuests(data);
+          renderGuests();
+        } catch (err) {
+          showError(listError, err instanceof Error ? err.message : 'No se pudieron cargar los invitados.');
+        }
+      };
+
+      const escapeHTML = (value: string): string =>
+        value.replace(/[&<>"']/g, (ch) =>
+          ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] ?? ch,
+        );
+
+      const matchesQuery = (guest: Guest): boolean => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        const haystack = `${guest.name} ${guest.cupos ?? ''} ${STATUS_LABEL[guest.status] ?? ''}`.toLowerCase();
+        return haystack.includes(q);
+      };
+
+      const renderGuests = (): void => {
+        if (!guestList) return;
+        const filtered = guests.filter(matchesQuery);
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        page = Math.min(page, totalPages);
+        const start = (page - 1) * PAGE_SIZE;
+        const pageGuests = filtered.slice(start, start + PAGE_SIZE);
+
+        guestList.innerHTML = '';
+        for (const guest of pageGuests) {
+          const tr = document.createElement('tr');
+          const status = STATUS_LABEL[guest.status] ?? guest.status ?? 'Pendiente';
+          const statusClass = STATUS_CLASS[guest.status] ?? 'badge-pending';
+          const actions = STATUS_ACTIONS.map(
+            (a) =>
+              `<button class="btn btn-sm ${a.cls}" type="button" data-action="status" data-status="${a.value}" data-id="${guest.id}">${a.label}</button>`,
+          ).join('');
+          tr.innerHTML = `
+            <td data-label="Nombre">${escapeHTML(guest.name)}</td>
+            <td data-label="Cupos">${guest.cupos ?? 1}</td>
+            <td data-label="Estado"><span class="badge ${statusClass}">${escapeHTML(status)}</span></td>
+            <td data-label="Acciones" class="row-actions">
+              <button class="btn btn-sm btn-ghost" type="button" data-action="copy" data-id="${guest.id}">Copiar link</button>
+              <button class="btn btn-sm btn-ghost" type="button" data-action="edit" data-id="${guest.id}">Editar</button>
+              ${actions}
+            </td>`;
+          guestList.appendChild(tr);
+        }
+
+        if (countEl) {
+          countEl.textContent = searchQuery
+            ? `${filtered.length} de ${guests.length}`
+            : String(guests.length);
+        }
+        if (emptyEl) emptyEl.hidden = filtered.length > 0;
+        if (pagerEl) pagerEl.hidden = filtered.length <= PAGE_SIZE;
+        if (pageInfoEl) {
+          const from = filtered.length === 0 ? 0 : start + 1;
+          const to = Math.min(start + PAGE_SIZE, filtered.length);
+          pageInfoEl.textContent = filtered.length
+            ? `${from}–${to} de ${filtered.length}`
+            : '0 resultados';
+        }
+        if (prevBtn) prevBtn.disabled = page <= 1;
+        if (nextBtn) nextBtn.disabled = page >= totalPages;
+      };
+
+      searchInput?.addEventListener('input', () => {
+        searchQuery = searchInput.value.trim();
+        page = 1;
+        renderGuests();
+      });
+      prevBtn?.addEventListener('click', () => {
+        page = Math.max(1, page - 1);
+        renderGuests();
+      });
+      nextBtn?.addEventListener('click', () => {
+        page += 1;
+        renderGuests();
+      });
+
+      const copyText = async (text: string): Promise<boolean> => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        } catch {
+          /* continue to fallback */
+        }
+        try {
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.select();
+          const ok = document.execCommand('copy');
+          textarea.remove();
+          return ok;
+        } catch {
+          return false;
+        }
+      };
+
+      secretSaveBtn?.addEventListener('click', async () => {
+        showError(secretError, '');
+        const value = secretInput?.value.trim() ?? '';
+        if (!value) { showError(secretError, 'Ingresa la clave de administrador.'); return; }
+        secret = value;
+        sessionStorage.setItem(SECRET_KEY, secret);
+        if (mintPanel) mintPanel.hidden = false;
+        if (listPanel) listPanel.hidden = false;
+        await loadGuests();
+      });
+
+      mintBtn?.addEventListener('click', async () => {
+        showError(mintError, '');
+        const raw = mintInput?.value ?? '';
+        if (!raw.trim()) {
+          showError(mintError, 'Escribe al menos un invitado con el formato nombre; cupos.');
+          return;
+        }
+        mintBtn.disabled = true;
+        try {
+          const data = (await api('mint', { lines: raw })) as {
+            created?: Guest[];
+            errors?: { line: number; message: string }[];
+          };
+          if (mintInput) mintInput.value = '';
+          const createdCount = data?.created?.length ?? 0;
+          showToast(`${createdCount} invitado${createdCount === 1 ? '' : 's'} creado${createdCount === 1 ? '' : 's'}.`);
+          const lineErrors = data?.errors ?? [];
+          if (lineErrors.length > 0) {
+            showError(
+              mintError,
+              `Algunas líneas no se pudieron crear: ${lineErrors
+                .map((e) => `L${e.line}: ${e.message}`)
+                .join(' · ')}`,
+            );
+          }
+          await loadGuests();
+        } catch (err) {
+          showError(mintError, err instanceof Error ? err.message : 'No se pudieron crear los invitados.');
+        } finally {
+          mintBtn.disabled = false;
+        }
+      });
+
+      copyAllBtn?.addEventListener('click', async () => {
+        const text = guests
+          .filter(matchesQuery)
+          .map((guest) => linkFor(guest.token))
+          .join('\n');
+        if (!text) { showToast('No hay invitados para copiar.'); return; }
+        const ok = await copyText(text);
+        showToast(ok ? 'Links copiados.' : 'No se pudo copiar. Selecciona y copia manualmente.');
+      });
+
+      guestList?.addEventListener('click', async (event) => {
+        const target = event.target as HTMLElement;
+        const btn = target.closest<HTMLElement>('[data-action]');
+        if (!btn) return;
+
+        // Cancelar no necesita id: va antes del guard de data-id.
+        if (btn.dataset.action === 'edit-cancel') {
+          renderGuests();
+          return;
+        }
+
+        const id = btn.dataset.id;
+        if (!id) return;
+
+        if (btn.dataset.action === 'edit-save') {
+          const tr = btn.closest('tr');
+          const nameInput = tr?.querySelector<HTMLInputElement>('[data-edit-name]');
+          const cuposInput = tr?.querySelector<HTMLInputElement>('[data-edit-cupos]');
+          const treatmentSel = tr?.querySelector<HTMLSelectElement>('[data-edit-treatment]');
+          if (!nameInput || !cuposInput || !treatmentSel) return;
+          const name = nameInput.value.trim();
+          const cupos = Number(cuposInput.value);
+          const treatment = treatmentSel.value === '' ? null : treatmentSel.value;
+          if (!name) { showError(listError, 'El nombre no puede estar vacío.'); return; }
+          if (!Number.isInteger(cupos) || cupos < 1 || cupos > 999) {
+            showError(listError, 'Cupos debe ser un entero entre 1 y 999.'); return;
+          }
+          showError(listError, '');
+          try {
+            await api('update_guest', { id, name, cupos, treatment });
+            showToast('Invitado actualizado.');
+            await loadGuests();
+          } catch (err) {
+            showError(listError, err instanceof Error ? err.message : 'No se pudo guardar.');
+          }
+          return;
+        }
+
+        if (btn.dataset.action === 'edit') {
+          const guest = guests.find((g) => g.id === id);
+          if (!guest) return;
+          const tr = btn.closest('tr');
+          if (!tr) return;
+          const treatmentOptions = Object.entries(TREATMENT_LABEL)
+            .map(
+              ([value, label]) =>
+                `<option value="${value}" ${guest.treatment === value ? 'selected' : ''}>${label}</option>`,
+            )
+            .join('');
+          tr.innerHTML = `
+            <td colspan="4">
+              <div class="edit-form">
+                <label>Nombre
+                  <input data-edit-name type="text" value="${escapeHTML(guest.name)}" maxlength="120" />
+                </label>
+                <label>Cupos
+                  <input data-edit-cupos type="number" min="1" max="999" value="${guest.cupos ?? 1}" />
+                </label>
+                <label>Tratamiento
+                  <select data-edit-treatment>
+                    <option value="" ${guest.treatment ? '' : 'selected'}>Auto</option>
+                    ${treatmentOptions}
+                  </select>
+                </label>
+                <div class="edit-actions">
+                  <button class="btn btn-sm btn-confirm" type="button" data-action="edit-save" data-id="${guest.id}">Guardar</button>
+                  <button class="btn btn-sm btn-ghost" type="button" data-action="edit-cancel">Cancelar</button>
+                </div>
+              </div>
+            </td>`;
+          return;
+        }
+
+        if (btn.dataset.action === 'copy') {
+          const guest = guests.find((g) => g.id === id);
+          if (!guest) return;
+          const ok = await copyText(linkFor(guest.token));
+          showToast(ok ? 'Link copiado.' : 'No se pudo copiar. Selecciona y copia manualmente.');
+          return;
+        }
+        if (btn.dataset.action === 'status') {
+          const status = btn.dataset.status;
+          if (!status) return;
+          showError(listError, '');
+          try {
+            await api('set_status', { id, status });
+            await loadGuests();
+          } catch (err) {
+            showError(listError, err instanceof Error ? err.message : 'No se pudo actualizar el estado.');
+          }
+        }
+      });
+
+      if (secret && secretInput) {
+        secretInput.value = secret;
+        if (mintPanel) mintPanel.hidden = false;
+        if (listPanel) listPanel.hidden = false;
+        void loadGuests();
+      }
+    </script>
+
+    <style is:global>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=Parisienne&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+      :root{--ink:#4a2436;--rose:#c2708a;--blush:#f9e8ee;--cream:#fdf9f6;--gold:#d9a85c;--serif:'Playfair Display',Georgia,serif;--sans:'DM Sans',sans-serif}
+      *{box-sizing:border-box}
+      body{margin:0;background:var(--cream);color:var(--ink);font:15px/1.6 var(--sans)}
+      .admin{max-width:880px;margin:0 auto;padding:clamp(3rem,8vw,6rem) clamp(1.25rem,5vw,3rem)}
+      .admin-header h1{font:400 clamp(2.6rem,7vw,4.5rem)/.95 var(--serif);letter-spacing:-.05em;margin:.2rem 0 .4rem}
+      .eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:.7rem;color:var(--rose);margin:0}
+      .subtitle{margin:0;color:#765d64}
+      .panel{background:#fffdfb;border:1px solid #ecd3dd;padding:1.6rem;margin-top:1.6rem;box-shadow:10px 10px 0 var(--blush)}
+      .panel h2{font:400 1.6rem var(--serif);margin:0 0 1rem}
+      .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:stretch}
+      input[type=password],textarea{width:100%;padding:.8rem .9rem;border:1px solid #dfc7bd;background:#fff;color:var(--ink);font:inherit;border-radius:0}
+      input[type=password]{flex:1;min-width:220px}
+      textarea{resize:vertical;min-height:8rem;margin-bottom:.8rem}
+      .btn{border:1px solid var(--gold);border-radius:0;padding:.75rem 1.1rem;font:500 .78rem var(--sans);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;background:transparent;color:var(--ink)}
+      .btn:disabled{opacity:.5;cursor:not-allowed}
+      .btn:focus-visible{outline:2px solid var(--rose);outline-offset:2px}
+      .btn-rose{background:var(--rose);border-color:var(--rose);color:#fff8f3}
+      .btn-ghost{border-color:#dfc7bd;color:#765d64}
+      .btn-sm{padding:.42rem .65rem;font-size:.66rem}
+      .hint{color:#765d64;font-size:.85rem}
+      .hint code{background:var(--blush);padding:.05rem .3rem;color:var(--ink)}
+      .error{color:#a03a4e;font-weight:500;margin:.7rem 0 0}
+      .count{font:500 .8rem var(--sans);color:var(--rose);margin-left:.4rem}
+      .list-tools{margin:.4rem 0 .8rem}
+      .list-tools input[type=search]{width:100%;max-width:420px;padding:.7rem .9rem;border:1px solid #dfc7bd;background:#fff;color:var(--ink);font:inherit;border-radius:0}
+      .pager{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-top:.9rem}
+      .page-info{font:500 .72rem var(--sans);color:#765d64;letter-spacing:.04em}
+      .pager .btn{min-height:38px}
+      .edit-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7rem;align-items:end}
+      .edit-form label{display:flex;flex-direction:column;gap:.3rem;font:500 .68rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#765d64}
+      .edit-form input,.edit-form select{width:100%;padding:.6rem .7rem;border:1px solid #dfc7bd;background:#fff;color:var(--ink);font:400 .95rem var(--sans);border-radius:0}
+      .edit-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+      .table-wrap{overflow-x:auto}
+      table{width:100%;border-collapse:collapse;margin-top:.4rem}
+      th,td{text-align:left;padding:.7rem .6rem;border-bottom:1px solid #efddd8;vertical-align:middle}
+      th{font:500 .68rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#765d64}
+      td{color:var(--ink)}
+      .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
+      .badge{display:inline-block;padding:.22rem .6rem;border-radius:999px;font:500 .66rem var(--sans);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+      .badge-confirmed{background:#e2efe6;color:#4d7c5f}
+      .badge-declined{background:#f0e2e6;color:#8a6470}
+      .badge-pending{background:#f5ead6;color:#a97c3f}
+      .btn-confirm{background:#4d7c5f;border-color:#4d7c5f;color:#fff8f3}
+      .btn-decline{background:#a03a4e;border-color:#a03a4e;color:#fff8f3}
+      .btn-pending{background:#f5ead6;border-color:#c49a62;color:#8a5f28}
+      .empty{color:#765d64;font-style:italic}
+      .toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%);background:var(--ink);color:#fff8f3;padding:.6rem 1.1rem;font:500 .8rem var(--sans);box-shadow:0 8px 20px rgba(58,38,48,.25);z-index:30}
+
+      /* ── Mobile: cada invitado como tarjeta, botones grandes de toque ── */
+      @media (max-width: 640px) {
+        .admin{padding:clamp(2.5rem,6vw,4rem) .9rem}
+        .panel{padding:1.2rem;box-shadow:6px 6px 0 var(--blush)}
+        .row{flex-direction:column;align-items:stretch}
+        input[type=password]{min-width:0}
+        input[type=password],textarea{font-size:16px}
+        .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+        .row .btn{width:100%}
+        .table-wrap{overflow:visible}
+        thead{display:none}
+        table,tr,td{display:block}
+        tr{background:#fffdfb;border:1px solid #ecd3dd;padding:.85rem 1rem;margin-bottom:.9rem;box-shadow:5px 5px 0 var(--blush)}
+        td{padding:.4rem .1rem;border-bottom:0;display:flex;justify-content:space-between;align-items:center;gap:.7rem;font-size:.95rem}
+        td::before{content:attr(data-label);font:500 .62rem var(--sans);letter-spacing:.08em;text-transform:uppercase;color:#765d64;flex-shrink:0}
+        .row-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding-top:.7rem;border-top:1px dashed #efddd8;margin-top:.6rem}
+        .row-actions .btn{width:100%;min-height:44px}
+        .row-actions .btn-sm{font-size:.72rem}
+        .row-actions .btn-ghost{order:1}
+        .row-actions .btn-confirm{order:2}
+        .row-actions .btn-decline{order:3}
+        .row-actions .btn-pending{order:4}
+        .list-tools input[type=search]{font-size:16px;max-width:none}
+        .pager{flex-wrap:wrap}
+        .pager .btn{flex:1;min-height:44px}
+        .edit-form{grid-template-columns:1fr;align-items:stretch}
+        .edit-form input,.edit-form select{font-size:16px}
+        .edit-actions .btn{flex:1;min-height:44px}
+      }
+    </style>
+  </body>
+</html>
