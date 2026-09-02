@@ -98,13 +98,14 @@ const photos = [
         <p class="eyebrow">Recuerdos</p>
         <h2 class="gallery-heading">Momentos que<br /><em>nos unen.</em></h2>
         <div class="gallery-track">
-          {photos.map((photo, i) => (
-            <div class="gallery-item" role="button" tabindex="0" aria-label={`Ver foto ${i + 1}`}
+          {photos.map((_, i) => (
+            <div class="gallery-item is-placeholder" aria-hidden="true"
               data-symbol={['♡', '✦', '◇', '✿', '❋', '✧'][i]}>
-              <img src={photo.src} alt={photo.alt} loading="lazy" onerror="this.style.display='none'" />
+              <span class="gallery-placeholder-text">Foto {i + 1}</span>
             </div>
           ))}
         </div>
+        <p class="gallery-note">Galería próximamente — sube tus fotos a <code>public/photos/</code> para activarlas.</p>
         <div class="gallery-dots">
           {photos.map((_, i) => (
             <span class:list={['gallery-dot', { active: i === 0 }]} data-dot={i}></span>
@@ -221,8 +222,10 @@ const photos = [
       const lightboxImg = document.querySelector('.lightbox-img');
       const closeLightbox = () => { lightbox.hidden = true; lightbox.classList.remove('active'); };
       document.querySelectorAll('.gallery-item').forEach(item => {
+        if (item.classList.contains('is-placeholder')) return;
         item.addEventListener('click', () => {
           const img = item.querySelector('img');
+          if (!img) return;
           lightboxImg.src = img.src; lightboxImg.alt = img.alt;
           lightbox.hidden = false; lightbox.classList.add('active');
         });
@@ -311,6 +314,10 @@ const photos = [
 .music-fab:hover,.music-fab:focus-visible{background:var(--gold);border-color:var(--gold);color:var(--ink)}
 .music-fab.is-playing{background:var(--gold);border-color:var(--gold);color:var(--ink)}
 .music-fab:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.gallery-item.is-placeholder{cursor:default}
+.gallery-placeholder-text{font:.7rem var(--sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(184,127,141,.85);z-index:1}
+.gallery-note{margin:1.8rem auto 0;max-width:32rem;text-align:center;color:#8a6a6e;font:.78rem var(--sans)}
+.gallery-note code{background:#f5eee9;border:1px solid #e5c39a66;padding:.15rem .4rem;border-radius:6px;font-size:.75rem}
 .music-fab-icon{font:1rem var(--serif)}
 @media(max-width:700px){.music-card{transform:none;box-shadow:6px 6px 0 #ecd5c2}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.cover h1{animation:none}.scroll-arrow{animation:none}.music-fab{transition:none}}
